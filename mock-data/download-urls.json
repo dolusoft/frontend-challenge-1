@@ -1,0 +1,23 @@
+[
+  {
+    "fileId": "f1",
+    "fileName": "chunk_2026_02_20_00_00.dat",
+    "downloadUrl": "https://storage.example.com/signed/chunk_2026_02_20_00_00.dat?token=mock-token-1&expires=1740400000",
+    "expirationDate": "2026-02-22T00:00:00Z",
+    "fileSize": 155950
+  },
+  {
+    "fileId": "f2",
+    "fileName": "chunk_2026_02_20_00_01.dat",
+    "downloadUrl": "https://storage.example.com/signed/chunk_2026_02_20_00_01.dat?token=mock-token-2&expires=1740400000",
+    "expirationDate": "2026-02-22T00:00:00Z",
+    "fileSize": 174429
+  },
+  {
+    "fileId": "f3",
+    "fileName": "chunk_2026_02_20_00_02.dat",
+    "downloadUrl": "https://storage.example.com/signed/chunk_2026_02_20_00_02.dat?token=mock-token-3&expires=1740400000",
+    "expirationDate": "2026-02-22T00:00:00Z",
+    "fileSize": 205411
+  }
+]
