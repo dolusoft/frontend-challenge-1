@@ -6,11 +6,12 @@ Build a **Backup Data Integrity** dashboard that visualizes time-series backup d
 
 ## Tech Stack (Required)
 
-- **Nuxt 3** (latest)
-- **Vue 3** (latest, Composition API)
-- **Nuxt UI** (latest)
-- **Pinia** (state management)
-- **TypeScript**
+| Technology | Version |
+|-----------|---------|
+| **Nuxt** | 4 (latest, v4.3+) |
+| **Nuxt UI** | 4 (latest, v4.4+) |
+| **Pinia** | 3 (latest, v3.0+) |
+| **TypeScript** | Required |
 
 ## What You Need to Build
 
