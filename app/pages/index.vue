@@ -1,0 +1,3 @@
+<template>
+  <!-- Dashboard sayfası -->
+</template>
