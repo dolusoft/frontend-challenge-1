@@ -74,26 +74,32 @@ export const useChunksStore = defineStore('chunks', () => {
     const allSelected = nonEmpty.every(b =>
       selectedKeys.value.has(bucketKey(hour, b.date.minute!))
     )
+    // Build next Set in one pass, then assign once → single reactivity trigger
+    const next = new Set(selectedKeys.value)
     for (const bucket of nonEmpty) {
       const key = bucketKey(hour, bucket.date.minute!)
-      allSelected ? selectedKeys.value.delete(key) : selectedKeys.value.add(key)
+      allSelected ? next.delete(key) : next.add(key)
     }
+    selectedKeys.value = next
   }
 
   function toggleSelectAll() {
     if (!data.value) return
     if (isAllSelected.value) {
-      selectedKeys.value.clear()
+      selectedKeys.value = new Set()
     } else {
+      // Build entire selection in one pass, assign once → single reactivity trigger
+      const next = new Set<string>()
       for (const group of data.value.groups)
         for (const bucket of group.buckets)
           if (bucket.dataCount > 0)
-            selectedKeys.value.add(bucketKey(group.date.hour, bucket.date.minute!))
+            next.add(bucketKey(group.date.hour, bucket.date.minute!))
+      selectedKeys.value = next
     }
   }
 
   function clearSelection() {
-    selectedKeys.value.clear()
+    selectedKeys.value = new Set()
   }
 
   function isBucketSelected(hour: number, minute: number): boolean {
@@ -134,51 +140,64 @@ export const useChunksStore = defineStore('chunks', () => {
       body: { dates: datesToDelete },
     })
     if (data.value) {
-      // Zero out individual buckets
-      const affectedHours = new Set<number>()
+      // O(1) lookup: hour → Set<minute> for deleted entries
+      const toDelete = new Map<number, Set<number>>()
       for (const d of datesToDelete) {
-        const group = data.value.groups.find(g => g.date.hour === d.hour)
-        if (!group) continue
-        const bucket = group.buckets.find(b => b.date.minute === d.minute)
-        if (!bucket) continue
-        bucket.dataCount = 0
-        bucket.sizeOnDisk = 0
-        bucket.compressedBytes = 0
-        bucket.uncompressedBytes = 0
-        affectedHours.add(d.hour)
+        if (!toDelete.has(d.hour)) toDelete.set(d.hour, new Set())
+        toDelete.get(d.hour)!.add(d.minute!)
       }
 
-      // Recalculate group-level aggregates for affected hours
-      for (const hour of affectedHours) {
-        const group = data.value.groups.find(g => g.date.hour === hour)
-        if (!group) continue
-        group.dataCount        = group.buckets.reduce((s, b) => s + b.dataCount, 0)
-        group.sizeOnDisk       = group.buckets.reduce((s, b) => s + b.sizeOnDisk, 0)
-        group.compressedBytes  = group.buckets.reduce((s, b) => s + b.compressedBytes, 0)
-        group.uncompressedBytes = group.buckets.reduce((s, b) => s + b.uncompressedBytes, 0)
-        group.dataChunkCount   = group.buckets.filter(b => b.dataCount > 0).length
-        group.compressionRatio = group.compressedBytes === 0
-          ? 0
-          : group.uncompressedBytes / group.compressedBytes
+      // Build a new data tree entirely in plain JS — no mutations on the reactive
+      // Proxy, so Vue's scheduler is triggered only ONCE (the final assignment).
+      const old = data.value
+
+      const newGroups = old.groups.map(g => {
+        const deletedMinutes = toDelete.get(g.date.hour)
+        if (!deletedMinutes) return g   // hour untouched — reuse same object
+
+        const newBuckets = g.buckets.map(b =>
+          deletedMinutes.has(b.date.minute!)
+            ? { ...b, dataCount: 0, sizeOnDisk: 0, compressedBytes: 0, uncompressedBytes: 0 }
+            : b
+        )
+
+        const dataCount         = newBuckets.reduce((s, b) => s + b.dataCount, 0)
+        const sizeOnDisk        = newBuckets.reduce((s, b) => s + b.sizeOnDisk, 0)
+        const compressedBytes   = newBuckets.reduce((s, b) => s + b.compressedBytes, 0)
+        const uncompressedBytes = newBuckets.reduce((s, b) => s + b.uncompressedBytes, 0)
+        const dataChunkCount    = newBuckets.filter(b => b.dataCount > 0).length
+        return {
+          ...g,
+          buckets: newBuckets,
+          dataCount, sizeOnDisk, compressedBytes, uncompressedBytes, dataChunkCount,
+          compressionRatio: compressedBytes === 0 ? 0 : uncompressedBytes / compressedBytes,
+        }
+      })
+
+      const dataCount         = newGroups.reduce((s, g) => s + g.dataCount, 0)
+      const sizeOnDisk        = newGroups.reduce((s, g) => s + g.sizeOnDisk, 0)
+      const compressedBytes   = newGroups.reduce((s, g) => s + g.compressedBytes, 0)
+      const uncompressedBytes = newGroups.reduce((s, g) => s + g.uncompressedBytes, 0)
+      const dataChunkCount    = newGroups.reduce((s, g) => s + g.dataChunkCount, 0)
+
+      let minDataCount = Infinity
+      let maxDataCount = 0
+      for (const g of newGroups)
+        for (const b of g.buckets)
+          if (b.dataCount > 0) {
+            if (b.dataCount < minDataCount) minDataCount = b.dataCount
+            if (b.dataCount > maxDataCount) maxDataCount = b.dataCount
+          }
+
+      // Single reactive assignment → one Vue update cycle
+      data.value = {
+        ...old,
+        groups: newGroups,
+        dataCount, sizeOnDisk, compressedBytes, uncompressedBytes, dataChunkCount,
+        compressionRatio: compressedBytes === 0 ? 0 : uncompressedBytes / compressedBytes,
+        minDataCount: minDataCount === Infinity ? 0 : minDataCount,
+        maxDataCount,
       }
-
-      // Recalculate root-level aggregates
-      data.value.dataCount        = data.value.groups.reduce((s, g) => s + g.dataCount, 0)
-      data.value.sizeOnDisk       = data.value.groups.reduce((s, g) => s + g.sizeOnDisk, 0)
-      data.value.compressedBytes  = data.value.groups.reduce((s, g) => s + g.compressedBytes, 0)
-      data.value.uncompressedBytes = data.value.groups.reduce((s, g) => s + g.uncompressedBytes, 0)
-      data.value.dataChunkCount   = data.value.groups.reduce((s, g) => s + g.dataChunkCount, 0)
-      data.value.compressionRatio = data.value.compressedBytes === 0
-        ? 0
-        : data.value.uncompressedBytes / data.value.compressedBytes
-
-      // Update color scale bounds
-      const nonZero = data.value.groups
-        .flatMap(g => g.buckets)
-        .map(b => b.dataCount)
-        .filter(c => c > 0)
-      data.value.minDataCount = nonZero.length ? Math.min(...nonZero) : 0
-      data.value.maxDataCount = nonZero.length ? Math.max(...nonZero) : 0
     }
     clearSelection()
     return result

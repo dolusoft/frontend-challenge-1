@@ -33,13 +33,13 @@
         :key="bucket.date.minute"
         class="cell"
         :class="{
-          'is-selected': store.isBucketSelected(group.date.hour, bucket.date.minute!),
+          'is-selected': selectedMinutes.has(bucket.date.minute!),
           'is-empty': bucket.dataCount === 0,
         }"
         :style="{ backgroundColor: `var(--heat-${levelFor(bucket.dataCount)})` }"
         :title="`${hourLabel}:${String(bucket.date.minute!).padStart(2, '0')}  ·  ${bucket.dataCount.toLocaleString()} records  ·  ${formatBytes(bucket.sizeOnDisk)}`"
         :aria-label="`${hourLabel}:${String(bucket.date.minute!).padStart(2, '0')}, ${bucket.dataCount.toLocaleString()} records`"
-        :aria-pressed="store.isBucketSelected(group.date.hour, bucket.date.minute!)"
+        :aria-pressed="selectedMinutes.has(bucket.date.minute!)"
         @click="bucket.dataCount > 0 && store.toggleBucket(group.date.hour, bucket.date.minute!)"
       />
     </div>
@@ -79,6 +79,18 @@ const hourLabel  = computed(() => `${props.group.date.hour}:00`)
 const isFull     = computed(() => store.isHourFullySelected(props.group.date.hour))
 const isPartial  = computed(() => store.isHourPartiallySelected(props.group.date.hour))
 const hasAnySelected = computed(() => isFull.value || isPartial.value)
+
+// Pre-compute selected minutes for this hour as a plain Set<number>.
+// Avoids calling store.isBucketSelected() (string key lookup) twice per cell.
+const selectedMinutes = computed<Set<number>>(() => {
+  const hour   = props.group.date.hour
+  const prefix = `${hour}:`
+  const result = new Set<number>()
+  for (const key of store.selectedKeys) {
+    if (key.startsWith(prefix)) result.add(Number(key.slice(prefix.length)))
+  }
+  return result
+})
 
 function levelFor(dataCount: number): number {
   if (dataCount === 0) return 0
