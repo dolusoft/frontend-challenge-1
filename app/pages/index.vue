@@ -22,15 +22,15 @@
         </div>
 
         <!-- 24 hour rows -->
-        <div class="flex flex-col gap-[2px]">
+        <div class="flex flex-col gap-[4px]">
           <div
             v-for="i in 24"
             :key="i"
-            class="flex items-center gap-[10px] px-1 py-[2px]"
+            class="flex items-center gap-[10px] px-[6px] py-[4px]"
           >
             <USkeleton class="w-4 h-4 rounded-sm flex-shrink-0" />
             <USkeleton class="w-[40px] h-[11px] rounded-full flex-shrink-0" />
-            <USkeleton class="flex-1 h-4 rounded" />
+            <USkeleton class="flex-1 h-[18px] rounded" />
             <USkeleton class="w-[195px] h-[11px] rounded-full flex-shrink-0" />
           </div>
         </div>

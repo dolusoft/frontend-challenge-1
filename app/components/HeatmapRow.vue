@@ -161,7 +161,7 @@ function showTooltip(bucket: Bucket, event: MouseEvent) {
   display:     flex;
   align-items: center;
   gap:         10px;
-  padding:     2px 4px;
+  padding:     4px 6px;
   border-radius: 6px;
   transition:  background 100ms ease;
 }
@@ -243,12 +243,12 @@ function showTooltip(bucket: Bucket, event: MouseEvent) {
   flex:    1;
   display: grid;
   grid-template-columns: repeat(60, 1fr);
-  gap:     2px;
+  gap:     3px;
 }
 
 .cell {
-  height:        16px;
-  border-radius: 2px;
+  height:        18px;
+  border-radius: 3px;
   cursor:        pointer;
   outline:       none;
   border:        none;

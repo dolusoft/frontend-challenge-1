@@ -48,7 +48,7 @@ const minuteMarks = [0, 10, 20, 30, 40, 50]
   align-items: center;
   gap:         10px;
   padding:     0 4px;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
 }
 
 /* checkbox (16) + gap (10) + label (40) = 66px */
@@ -85,6 +85,6 @@ const minuteMarks = [0, 10, 20, 30, 40, 50]
 .rows-container {
   display:        flex;
   flex-direction: column;
-  gap:            2px;
+  gap:            4px;
 }
 </style>
