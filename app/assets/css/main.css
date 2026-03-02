@@ -1,0 +1,79 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+/* ─── App Design Tokens ──────────────────────────────────────────
+   Renkleri sadece buradan yönet.
+   Komponentler bg-canvas, bg-panel, border-panel-border gibi
+   semantic class kullanır — dark: prefix yazmaya gerek yok.
+───────────────────────────────────────────────────────────────── */
+
+:root {
+  /* Backgrounds */
+  --canvas:         oklch(96% 0 0);
+  --panel:          #ffffff;
+  --panel-border:   oklch(91% 0 0);
+  --panel-divider:  oklch(93.5% 0 0);
+  --panel-hover:    oklch(97% 0 0);
+
+  /* Shadow — panel / dashboard card */
+  --panel-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.07),
+    0 0 0 1px rgba(0, 0, 0, 0.04);
+
+  /* Shadow — sidebar */
+  --sidebar-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.07),
+    0 0 0 1px rgba(0, 0, 0, 0.04);
+
+  /* Shadow — navbar */
+  --navbar-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.07),
+    0 0 0 1px rgba(0, 0, 0, 0.04);
+}
+
+.dark {
+  --canvas:         oklch(13% 0 0);
+  --panel:          oklch(17% 0 0);
+  --panel-border:   oklch(27% 0 0);
+  --panel-divider:  oklch(22% 0 0);
+  --panel-hover:    oklch(21% 0 0);
+
+  --panel-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.06);
+  --sidebar-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.06);
+  --navbar-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.06);
+
+  /* Boş heatmap hücresi dark modda koyu yeşilimsi */
+  --heat-0: oklch(22% 0.012 155);
+}
+
+/* Tailwind utility class'larına bağla */
+@theme inline {
+  --color-canvas:         var(--canvas);
+  --color-panel:          var(--panel);
+  --color-panel-border:   var(--panel-border);
+  --color-panel-divider:  var(--panel-divider);
+  --color-panel-hover:    var(--panel-hover);
+}
+
+/* ─── Heatmap Color Scale (8 levels) ────────────────────────────
+   Level 0 = empty / no data
+   Level 1–8 = veri yoğunluğu arttıkça daha koyu yeşil
+───────────────────────────────────────────────────────────────── */
+
+:root {
+  --heat-0: oklch(96%   0.010 155);
+  --heat-1: oklch(91%   0.070 155);
+  --heat-2: oklch(84%   0.115 155);
+  --heat-3: oklch(76%   0.150 155);
+  --heat-4: oklch(67%   0.180 155);
+  --heat-5: oklch(58%   0.195 155);
+  --heat-6: oklch(49%   0.190 155);
+  --heat-7: oklch(40%   0.170 155);
+  --heat-8: oklch(31%   0.140 155);
+}
