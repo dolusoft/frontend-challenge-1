@@ -27,7 +27,7 @@
     <div class="hour-label">{{ hourLabel }}</div>
 
     <!-- 60-cell strip -->
-    <div class="cells-grid">
+    <div class="cells-grid" @mouseleave="hoveredBucket = null">
       <button
         v-for="bucket in group.buckets"
         :key="bucket.date.minute"
@@ -37,9 +37,9 @@
           'is-empty': bucket.dataCount === 0,
         }"
         :style="{ backgroundColor: `var(--heat-${levelFor(bucket.dataCount)})` }"
-        :title="`${hourLabel}:${String(bucket.date.minute!).padStart(2, '0')}  ·  ${bucket.dataCount.toLocaleString()} records  ·  ${formatBytes(bucket.sizeOnDisk)}`"
         :aria-label="`${hourLabel}:${String(bucket.date.minute!).padStart(2, '0')}, ${bucket.dataCount.toLocaleString()} records`"
         :aria-pressed="selectedMinutes.has(bucket.date.minute!)"
+        @mouseenter="showTooltip(bucket, $event)"
         @click="bucket.dataCount > 0 && store.toggleBucket(group.date.hour, bucket.date.minute!)"
       />
     </div>
@@ -61,11 +61,54 @@
         <span class="stat-label">ratio</span>
       </div>
     </div>
+
+    <!-- Cell tooltip — teleported to <body> to avoid overflow/z-index issues.
+         One instance per row (24 total), not per cell (1440). -->
+    <Teleport to="body">
+      <div
+        v-if="hoveredBucket"
+        class="chunk-tooltip"
+        :style="{ top: `${tooltipY}px`, left: `${tooltipX}px` }"
+      >
+        <!-- Header: timestamp + selected badge -->
+        <div class="ct-header">
+          <span class="ct-time">
+            {{ String(group.date.hour).padStart(2, '0') }}:{{ String(hoveredBucket.date.minute!).padStart(2, '0') }}
+          </span>
+          <span v-if="selectedMinutes.has(hoveredBucket.date.minute!)" class="ct-badge">
+            Selected
+          </span>
+        </div>
+
+        <div class="ct-divider" />
+
+        <!-- Data rows -->
+        <template v-if="hoveredBucket.dataCount > 0">
+          <div class="ct-row">
+            <span class="ct-key">Records</span>
+            <span class="ct-val">{{ formatRecords(hoveredBucket.dataCount) }}</span>
+          </div>
+          <div class="ct-row">
+            <span class="ct-key">Disk size</span>
+            <span class="ct-val">{{ formatBytes(hoveredBucket.sizeOnDisk) }}</span>
+          </div>
+          <div class="ct-row">
+            <span class="ct-key">Compressed</span>
+            <span class="ct-val">{{ formatBytes(hoveredBucket.compressedBytes) }}</span>
+          </div>
+          <div class="ct-row">
+            <span class="ct-key">Ratio</span>
+            <span class="ct-val">{{ formatRatio(hoveredBucket.compressionRatio) }}</span>
+          </div>
+        </template>
+        <p v-else class="ct-empty">No backup data</p>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { ChunkGroup } from '#shared/types'
+import type { ChunkGroup, Bucket } from '#shared/types'
 
 const props = defineProps<{
   group: ChunkGroup
@@ -98,6 +141,17 @@ function levelFor(dataCount: number): number {
   if (maxDataCount === minDataCount) return 8
   const level = Math.round(((dataCount - minDataCount) / (maxDataCount - minDataCount)) * 7) + 1
   return Math.min(8, Math.max(1, level))
+}
+
+// ── Tooltip ───────────────────────────────────────────────────
+const hoveredBucket = ref<Bucket | null>(null)
+const tooltipX      = ref(0)
+const tooltipY      = ref(0)
+
+function showTooltip(bucket: Bucket, event: MouseEvent) {
+  hoveredBucket.value = bucket
+  tooltipX.value = event.clientX
+  tooltipY.value = event.clientY
 }
 </script>
 
@@ -256,5 +310,77 @@ function levelFor(dataCount: number): number {
   height:       20px;
   background:   var(--panel-divider);
   flex-shrink:  0;
+}
+
+/* ── Cell tooltip ────────────────────────────────────────────── */
+.chunk-tooltip {
+  position:       fixed;
+  z-index:        9999;
+  pointer-events: none;
+  transform:      translate(-50%, calc(-100% - 10px));
+
+  min-width:     160px;
+  padding:       10px 12px;
+  border-radius: 10px;
+  background:    var(--panel);
+  border:        1px solid var(--panel-border);
+  box-shadow:    var(--panel-shadow);
+}
+
+.ct-header {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  gap:             8px;
+  margin-bottom:   7px;
+}
+
+.ct-time {
+  font-family: ui-monospace, monospace;
+  font-size:   13px;
+  font-weight: 700;
+  color:       var(--ui-text-highlighted);
+}
+
+.ct-badge {
+  font-size:     10px;
+  font-weight:   600;
+  padding:       2px 7px;
+  border-radius: 999px;
+  background:    rgba(16, 185, 129, 0.12);
+  color:         rgb(16, 185, 129);
+}
+
+.ct-divider {
+  height:        1px;
+  background:    var(--panel-divider);
+  margin-bottom: 7px;
+}
+
+.ct-row {
+  display:         flex;
+  justify-content: space-between;
+  align-items:     center;
+  gap:             20px;
+  padding:         1.5px 0;
+}
+
+.ct-key {
+  font-size: 11px;
+  color:     var(--ui-text-muted);
+}
+
+.ct-val {
+  font-size:            11px;
+  font-weight:          600;
+  font-variant-numeric: tabular-nums;
+  color:                var(--ui-text-highlighted);
+}
+
+.ct-empty {
+  font-size:  11px;
+  color:      var(--ui-text-dimmed);
+  text-align: center;
+  padding:    2px 0;
 }
 </style>
