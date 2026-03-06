@@ -76,3 +76,25 @@ Display at the bottom of the page:
 - Total Chunks (e.g., "1,440")
 - Size On Disk (e.g., "167.54 MB")
 - Color scale indicator (Less → More)
+
+## Additional Requirements
+
+### 7. Dark Mode / Light Mode
+
+The application must support both dark and light themes. The user should be able to toggle between themes. Use Nuxt UI's built-in color mode support and CSS variables to implement theme switching.
+
+### 8. Performance
+
+The grid displays **1,440 cells** simultaneously. Selecting all chunks or performing bulk operations must not cause UI freezes or noticeable lag. Optimize rendering to ensure smooth interactions even when selecting large numbers of chunks at once.
+
+### 9. Loading States
+
+All asynchronous operations (API calls, bulk selections) must show appropriate loading indicators. The user should always have clear visual feedback that an operation is in progress.
+
+### 10. Contextual Information
+
+The application should guide the user. Add helpful descriptions, labels, or information text where appropriate so that the interface is self-explanatory without external documentation.
+
+### 11. Rich Tooltips
+
+When hovering over a grid cell, display a styled tooltip component (e.g., Nuxt UI Tooltip) showing relevant chunk details (timestamp, record count, file size, etc.). Do not use plain browser `title` attributes.
